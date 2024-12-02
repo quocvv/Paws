@@ -10,7 +10,7 @@ bot.onText(/\/start/, (msg) => {
     reply_markup: {
       inline_keyboard: [
         [
-          { text: "Launch App", web_app: { url: "https://paws-hgtismvzk-quocs-projects-64d1821c.vercel.app" } }
+          { text: "Launch App", web_app: { url: "https://paws-gepp4ekuh-quocs-projects-64d1821c.vercel.app/" } }
         ]
       ]
     }
