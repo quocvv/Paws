@@ -23,15 +23,10 @@ const HomeTab = () => {
 
   // Handle wallet creation
   const handleCreateWallet = () => {
-    try {
       const { publicKey, privateKey } = createWallet(); // Call the wallet creation function from solanaService
       setWalletAddress(publicKey);
       setPrivateKey(privateKey);
       setStatusMessage('Wallet created successfully!');
-    } catch (error) {
-      console.error('Error creating wallet:', error);
-      setStatusMessage(`Error creating wallet: ${error.message}`);
-    }
   };
 
   // Handle Follow Twitter task
