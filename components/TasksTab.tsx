@@ -69,6 +69,8 @@ const TasksTab = () => {
             reward: '+ 1,000 PAWS'
         }
     ]
+    const [completedTasks, setCompletedTasks] = useState<Record<number, boolean>>({});
+
 
     return (
         <div className={`quests-tab-con px-4 transition-all duration-300`}>
@@ -137,13 +139,29 @@ const TasksTab = () => {
                                 <div className="text-[17px]">{task.title}</div>
                                 <div className="text-gray-400 text-[14px]">{task.reward}</div>
                             </div>
-                            <button className="h-8 bg-white text-black px-4 rounded-full text-sm font-medium flex items-center">
-                                Start
+                            <button
+                                onClick={() => {
+                                    if (!completedTasks[index]) {
+                                        if (task.title === 'Follow twitter') {
+                                            window.open('https://x.com/dogs_holder', '_blank');
+                                        }
+                                        setCompletedTasks((prev) => ({
+                                            ...prev,
+                                            [index]: true,
+                                        }));
+                                    }
+                                }}
+                                className={`h-8 px-4 rounded-full text-sm font-medium flex items-center
+                        ${completedTasks[index] ? 'bg-gray-400 text-white' : 'bg-white text-black'}`}
+                                disabled={completedTasks[index]}
+                            >
+                                {completedTasks[index] ? 'Done' : 'Start'}
                             </button>
                         </div>
                     </div>
                 ))}
             </div>
+
         </div>
     )
 }

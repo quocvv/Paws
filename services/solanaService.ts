@@ -1,75 +1,88 @@
-import { 
-    Connection, 
-    Keypair, 
-    PublicKey, 
-    Transaction 
-  } from '@solana/web3.js';
-  import {
-    createTransferInstruction,
-    getOrCreateAssociatedTokenAccount,
-    TOKEN_PROGRAM_ID
-  } from '@solana/spl-token';
-  
-  // Constants
-  const SOLANA_RPC = 'https://api.devnet.solana.com'; // RPC endpoint
-  const TOKEN_MINT_ADDRESS = 'GKdaUDZsFbi4dxWcpweLU7MJU89X4zTqrERuAZ8rLuby'; // Địa chỉ token của bạn (Token Mint Address)
-  
-  // Kết nối Solana blockchain
-  const connection = new Connection(SOLANA_RPC);
-  
-  /**
-   * Claim tokens by converting points to tokens.
-   *
-   * @param userWallet - Địa chỉ ví người dùng
-   * @param privateKey - Secret key của ví người dùng
-   * @param points - Số lượng points người dùng
-   * @returns Transaction signature
-   */
-  export const claimTokens = async (
-    userWallet: string,
-    privateKey: string,
-    points: number
-  ): Promise<{ success: boolean, signature?: string, error?: string }> => {
-    if (points <= 0) {
-      return { success: false, error: 'Không đủ points để claim!' };
-    }
-  
-    try {
-      // Tạo keypair từ private key
-      const userKeypair = Keypair.fromSecretKey(Buffer.from(privateKey, 'base64'));
-  
-      // Đảm bảo người dùng có tài khoản token
-      const userTokenAccount = await getOrCreateAssociatedTokenAccount(
-        connection,
-        userKeypair,
-        new PublicKey(TOKEN_MINT_ADDRESS),
-        userKeypair.publicKey // Tạo tài khoản token nếu chưa có
-      );
-  
-      // Số lượng token claim (1 point = 1 token)
-      const tokenAmount = BigInt(points * 10 ** 6); // Giả sử token có 6 decimal places
-  
-      // Tạo giao dịch chuyển token
-      const transaction = new Transaction().add(
-        createTransferInstruction(
-          userTokenAccount.address, // Tài khoản token của người dùng (nơi chứa token)
-          new PublicKey(userWallet), // Địa chỉ ví người dùng nhận token
-          userKeypair.publicKey, // Chữ ký giao dịch
-          tokenAmount.toString(), // Số lượng token chuyển (dưới dạng chuỗi)
-          [], // Optional signers nếu cần
-          TOKEN_PROGRAM_ID
-        )
-      );
-  
-      // Gửi giao dịch
-      const signature = await connection.sendTransaction(transaction, [userKeypair]);
-      await connection.confirmTransaction(signature, 'confirmed');
-  
-      return { success: true, signature };
-  
-    } catch (error) {
-      console.error('Lỗi khi claim tokens:', error);
-      return { success: false, error: error.message || 'Unknown error' };
-    }
-  };
-  
+import { Keypair, Connection, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
+import { getOrCreateAssociatedTokenAccount, createTransferInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import bs58 from 'bs58';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Lấy private key và mint address từ .env
+const PHANTOM_PRIVATE_KEY = process.env.PHANTOM_PRIVATE_KEY as string;
+const TOKEN_MINT_ADDRESS = process.env.TOKEN_MINT_ADDRESS as string;
+console.log('Mint Address:', TOKEN_MINT_ADDRESS);
+
+
+// Hàm tạo ví mới
+export const createWallet = () => {
+  const keypair = Keypair.generate();
+  const publicKey = keypair.publicKey.toBase58();
+  const privateKey = bs58.encode(keypair.secretKey);
+  return { publicKey, privateKey };
+};
+// export const claimTokens = async (
+//   walletAddress: string,
+//   privateKey: string,
+//   points: number,
+//   connection: Connection,
+//   mintAddress: string
+// ) => {
+//   if (!walletAddress || !privateKey || !points || !connection || !mintAddress) {
+//     console.error('Missing required parameters:', { walletAddress, privateKey, points, connection, mintAddress });
+//     throw new Error('Missing required parameters');
+//   }
+
+//   try {
+//     // Đảm bảo walletAddress và privateKey hợp lệ
+//     const payerKeypair = Keypair.fromSecretKey(bs58.decode(privateKey));
+//     const mintPublicKey = new PublicKey(mintAddress);
+//     const recipientPublicKey = new PublicKey(walletAddress);
+
+//     console.log('Wallet Address:', walletAddress);
+//     console.log('Private Key:', privateKey);
+//     console.log('Points:', points);
+//     console.log('Mint Address:', mintAddress);
+//     console.log('Payer PublicKey:', payerKeypair.publicKey.toBase58());
+//     console.log('Recipient PublicKey:', recipientPublicKey.toBase58());
+
+//     // Tạo hoặc lấy Associated Token Account (ATA) cho ví chủ (payer) và ví đích (recipient)
+//     const sourceTokenAccount = await getOrCreateAssociatedTokenAccount(
+//       connection,
+//       payerKeypair,
+//       mintPublicKey,
+//       payerKeypair.publicKey
+//     );
+
+//     const destinationTokenAccount = await getOrCreateAssociatedTokenAccount(
+//       connection,
+//       payerKeypair,
+//       mintPublicKey,
+//       recipientPublicKey
+//     );
+
+//     const sourceTokenBalance = await connection.getTokenAccountBalance(sourceTokenAccount.address);
+//     const amount = parseFloat(sourceTokenBalance.value.amount); // Chuyển đổi số dư sang kiểu số hợp lệ
+
+//     if (amount < points) {
+//       throw new Error('Insufficient balance');
+//     }
+
+
+//     const transaction = new Transaction().add(
+//       createTransferInstruction(
+//         sourceTokenAccount.address,         // Tài khoản nguồn
+//         destinationTokenAccount.address,    // Tài khoản đích
+//         payerKeypair.publicKey,             // Người ký giao dịch
+//         points,                             // Số lượng token chuyển
+//         [],                                 // Danh sách người đồng ký (nếu có)
+//         TOKEN_PROGRAM_ID                    // ID của Token Program
+//       )
+//     );
+
+//     const signature = await sendAndConfirmTransaction(connection, transaction, [payerKeypair]);
+//     console.log('Transaction signature:', signature);
+
+//     return { success: true, signature };
+//   } catch (error) {
+//     console.error('Error claiming tokens:', error);
+//     return { success: false, error: error.message };
+//   }
+// };

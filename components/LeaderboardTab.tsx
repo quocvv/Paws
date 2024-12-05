@@ -50,8 +50,8 @@ const LeaderboardTab = () => {
                                 <PawsLogo className="w-full h-full" />
                             </div>
                             <div className="text-black font-medium">
-                                <div className="text-base">nikandr_s</div>
-                                <div className="text-xs">4,646 PAWS</div>
+                                <div className="text-base">BumbleBee</div>
+                                <div className="text-xs">12879.28 PAWS</div>
                             </div>
                         </div>
                         <div className="text-black">#15,355,328</div>
